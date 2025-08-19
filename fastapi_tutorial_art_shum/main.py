@@ -1,60 +1,47 @@
-from fastapi import FastAPI, HTTPException
-import uvicorn
-from pydantic import BaseModel
-
+from fastapi import FastAPI
+from pydantic import BaseModel, Field, EmailStr
 
 app = FastAPI()
 
+data = {
+    "email": "abc@mail.ru",
+    "bio": "I'm happy",
+    "age": 12,
+}
 
-books = [
-    {
-        "id": 1,
-        "title": "Alice in wonderland",
-        "author": "Lewis Carroll",
-    },
-    {
-        "id": 2,
-        "title": "The Adventures of Huckleberry Finn",
-        "author": "Mark Twain",
-    },
-]
+data_wo_age = {
+    "email": "abc@mail.ru",
+    "bio": "I'm happy",
+}
 
 
-@app.get(
-    "/books",
-    tags=["Books"],
-    summary="Get all books",
-)
-def read_books():
-    return books
+class UserSchema(BaseModel):
+    email: EmailStr
+    bio: str | None = Field(max_length=1000)
 
 
-@app.get("/books/{book_id}", tags=["Books"], summary="Get the book")
-def get_book(book_id: int):
-    for book in books:
-        if book["id"] == book_id:
-            return book
-    raise HTTPException(status_code=404, detail="Book not found")
+users = []
 
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)
+@app.post("/users")
+def add_user(user: UserSchema):
+    users.append(user)
+    return {"ok": True, "msg": "User added"}
 
 
-class NewBook(BaseModel):
-    # fastAPI сам валидирует эти данные
-    title: str
-    author: str
+@app.get("/")
+def root():
+    return {"ok": True, "hint": "Открой /docs или используй /users (GET/POST)"}
 
 
-@app.post("/books", tags=["Create book"])
-def create_book(new_book: NewBook):
-    books.append(
-        {
-            "id": len(books) + 1,
-            "title": new_book.title,
-            "author": new_book.author,
-        }
-    )
-    # fastAPI сам преобразует словарь в Json
-    return {"success": True, "message": "Book was added successfully"}
+@app.get("/users")
+def get_users():
+    return users
+
+
+class UserAgeSchema(UserSchema):
+    age: int | None = Field(default=None, ge=0, le=130)
+
+
+# print(repr(UserSchema(**data)))
+# print(repr(UserAgeSchema(**data_wo_age)))
