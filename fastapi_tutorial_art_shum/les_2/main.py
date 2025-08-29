@@ -45,3 +45,7 @@ class UserAgeSchema(UserSchema):
 
 # print(repr(UserSchema(**data)))
 # print(repr(UserAgeSchema(**data_wo_age)))
+
+
+# # les_2/main.py с app внутри, как запустить только этот код
+# uvicorn les_2.main:app --reload
