@@ -1,10 +1,14 @@
 import requests
 import json
+import time
+import functools
+from retrying import retry
 
 
 url = "https://api.hh.ru/vacancies"
 
 
+@retry(Exception, stop_max_attempt_number=5, wait_fixed=2000)
 def fetch_hh_vacancies(url: str, page: int = 0):
     query_params = {
         "text": "django OR fastapi OR flask OR litestar OR aiohttp",
@@ -13,12 +17,24 @@ def fetch_hh_vacancies(url: str, page: int = 0):
     }
     responce = requests.get(url, params=query_params)
     if responce.status_code != 200:
+        raise requests.HTTPError(f"Ошибка {responce.status_code}: {responce.text}")
         print("Запрос упал с ошибкой", responce.text)
     print("Успешно полученны вакансии", {page})
     result = responce.json()
     return result
 
 
+def time_sleep_decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        time.sleep(0.2)
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@retry(Exception, stop_max_attempt_number=7, wait_fixed=2000)
+@time_sleep_decorator
 def fetch_all_hh_vacancies(url: str):
     page = 0
     vacvacancies_data = []
@@ -26,7 +42,6 @@ def fetch_all_hh_vacancies(url: str):
         if page == 20:
             break
         vacvacancies = fetch_hh_vacancies(url, page)
-        vacvacancies_data
         if len(vacvacancies["items"]) == 0:
             break
         vacvacancies_data.extend(vacvacancies["items"])
