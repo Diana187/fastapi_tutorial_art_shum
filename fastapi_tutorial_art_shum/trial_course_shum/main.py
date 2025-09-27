@@ -61,7 +61,7 @@ def fetch_hh_vacancies(url: str, page: int = 0) -> dict:
         "per_page": 100,
         "page": page,
     }
-    response = requests.get(url, params=query_params)
+    response = requests.get(url, params=query_params, timeout=10)
     if response.status_code != 200:
         raise requests.HTTPError(f"Ошибка {response.status_code}: {response.text}")
     print(f"Успешно получены вакансии со страницы {page}")
